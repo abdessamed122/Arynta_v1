@@ -16,6 +16,8 @@ A production-ready React Native mobile app built with Expo and TypeScript that e
 screenshot
 https://github.com/user-attachments/assets/997d1d56-b1f3-4b68-9b62-0111a2460ec3
 
+![WhatsApp Image 2025-09-15 at 12 45 35 AM](https://github.com/user-attachments/assets/a696c851-42f3-4be7-99f5-073748f796a7)
+![WhatsApp Image 2025-09-15 at 12 45 35 AM (1)](https://github.com/user-attachments/assets/bf87d4f7-bfeb-4cdb-be44-b76e886c7ed6)
 
 
 ## 🏗️ Architecture
