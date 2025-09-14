@@ -13,6 +13,11 @@ A production-ready React Native mobile app built with Expo and TypeScript that e
 - **Offline Support**: Graceful handling of network issues and offline states
 - **Accessibility**: Screen reader support and proper accessibility labels
 
+screenshot
+https://github.com/user-attachments/assets/997d1d56-b1f3-4b68-9b62-0111a2460ec3
+
+
+
 ## 🏗️ Architecture
 
 ### Project Structure
