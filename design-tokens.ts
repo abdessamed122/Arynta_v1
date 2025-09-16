@@ -2,79 +2,85 @@
 // No component-specific styling here. Keep values semantic-friendly.
 
 export const palette = {
-  // Neutral / Gray scale (tuned for dark & light blending)
+  // Neutral / Gray scale (Material Design 3.0 inspired)
   gray0: '#FFFFFF',
-  gray1: '#F5F6F7',
-  gray2: '#ECEEF0',
-  gray3: '#D9DCDF',
-  gray4: '#B7BCC1',
-  gray5: '#8A9299',
-  gray6: '#5C656E',
-  gray7: '#3B444D',
-  gray8: '#262D34',
-  gray9: '#171C21',
-  gray10: '#0E1114',
+  gray1: '#FAFBFC',
+  gray2: '#F2F4F7',
+  gray3: '#E4E7EC',
+  gray4: '#D0D5DD',
+  gray5: '#98A2B3',
+  gray6: '#667085',
+  gray7: '#475467',
+  gray8: '#344054',
+  gray9: '#1D2939',
+  gray10: '#101828',
 
-  // Brand primary scale
-  brand50: '#E6F7FF',
-  brand100: '#B3E7FF',
-  brand200: '#80D6FF',
-  brand300: '#4DC6FF',
-  brand400: '#26B9FF',
-  brand500: '#009DFF', // primary base
-  brand600: '#007ACC',
-  brand700: '#005A99',
-  brand800: '#003D66',
-  brand900: '#002033',
+  // Brand primary scale (Modern purple-blue gradient inspired)
+  brand50: '#F0F4FF',
+  brand100: '#E0E7FF',
+  brand200: '#C7D2FE',
+  brand300: '#A5B4FC',
+  brand400: '#818CF8',
+  brand500: '#6366F1', // primary base
+  brand600: '#4F46E5',
+  brand700: '#4338CA',
+  brand800: '#3730A3',
+  brand900: '#312E81',
 
-  // Accent (secondary highlight)
-  accent50: '#FFF5E6',
-  accent100: '#FFE3B3',
-  accent200: '#FFD180',
-  accent300: '#FFBE4D',
-  accent400: '#FFB026',
-  accent500: '#FF9800',
-  accent600: '#DB7D00',
-  accent700: '#B76400',
-  accent800: '#924C00',
-  accent900: '#5E3000',
+  // Accent (modern teal for secondary actions)
+  accent50: '#F0FDFA',
+  accent100: '#CCFBF1',
+  accent200: '#99F6E4',
+  accent300: '#5EEAD4',
+  accent400: '#2DD4BF',
+  accent500: '#14B8A6',
+  accent600: '#0D9488',
+  accent700: '#0F766E',
+  accent800: '#115E59',
+  accent900: '#134E4A',
 
-  // Semantic (status)
-  success: '#1FA971',
-  successBg: '#E6F7F1',
-  warning: '#D99000',
-  warningBg: '#FFF7E6',
-  danger: '#D93025',
-  dangerBg: '#FDECEA',
-  info: '#0A7EA4',
-  infoBg: '#E5F6FB',
+  // Semantic (status) - Modern and accessible
+  success: '#059669',
+  successBg: '#F0FDF4',
+  warning: '#D97706',
+  warningBg: '#FFFBEB',
+  danger: '#DC2626',
+  dangerBg: '#FEF2F2',
+  info: '#0284C7',
+  infoBg: '#F0F9FF',
 };
 
 export const typography = {
   fontFamilySans: 'System',
   fontFamilyMono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-  // Scales based on a 1.125 (major second) ratio off 16 base.
+  // Enhanced type scale with better hierarchy
   size: {
+    '2xs': 10,
     xs: 12,
     sm: 14,
     md: 16,
     lg: 18,
     xl: 20,
     '2xl': 24,
-    '3xl': 28,
-    '4xl': 34,
+    '3xl': 30,
+    '4xl': 36,
+    '5xl': 48,
+    '6xl': 60,
   },
   lineHeight: {
     tight: 1.1,
     snug: 1.25,
     normal: 1.4,
     relaxed: 1.6,
+    loose: 1.8,
   },
   weight: {
+    light: '300',
     regular: '400',
     medium: '500',
     semibold: '600',
     bold: '700',
+    extrabold: '800',
   },
 };
 
@@ -89,6 +95,10 @@ export const spacing = {
   '2xl': 24,
   '3xl': 32,
   '4xl': 40,
+  '5xl': 48,
+  '6xl': 64,
+  '7xl': 80,
+  '8xl': 96,
 };
 
 export const radii = {
@@ -98,38 +108,64 @@ export const radii = {
   md: 8,
   lg: 12,
   xl: 16,
+  '2xl': 20,
+  '3xl': 24,
   round: 999,
 };
 
 export const shadows = {
-  // Use elevation mapping on native later
-  sm: {
+  // Enhanced shadow system with modern depth
+  none: {
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  xs: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
     shadowRadius: 6,
-    elevation: 3,
+    elevation: 4,
   },
   lg: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  xl: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.25,
+    shadowRadius: 25,
+    elevation: 12,
   },
 };
 
 export const gradients = {
-  brand: ['#009DFF', '#005A99'],
-  surface: ['#FFFFFF', '#F5F6F7'],
-  surfaceDark: ['#171C21', '#0E1114'],
+  brand: ['#6366F1', '#4338CA'],
+  brandAlt: ['#818CF8', '#6366F1'],
+  surface: ['#FFFFFF', '#FAFBFC'],
+  surfaceDark: ['#1D2939', '#101828'],
+  accent: ['#14B8A6', '#0D9488'],
+  sunset: ['#F59E0B', '#EF4444'],
 };
 
 // Semantic tokens map raw tokens to meaning (supports theming overrides)
@@ -139,7 +175,7 @@ export const semantic = {
       bg: palette.gray0,
       bgAlt: palette.gray1,
       surface: palette.gray0,
-      surfaceAlt: palette.gray1,
+      surfaceAlt: palette.gray2,
       text: palette.gray9,
       textAlt: palette.gray6,
       border: palette.gray3,
@@ -162,12 +198,12 @@ export const semantic = {
   },
   dark: {
     color: {
-      bg: palette.gray9,
-      bgAlt: palette.gray8,
-      surface: palette.gray8,
-      surfaceAlt: palette.gray7,
+      bg: palette.gray10,
+      bgAlt: palette.gray9,
+      surface: palette.gray9,
+      surfaceAlt: palette.gray8,
       text: palette.gray1,
-      textAlt: palette.gray4,
+      textAlt: palette.gray5,
       border: palette.gray7,
       divider: palette.gray8,
       focus: palette.brand400,
@@ -180,10 +216,10 @@ export const semantic = {
       warning: palette.warning,
       danger: palette.danger,
       info: palette.info,
-      successBg: '#0F3326',
-      warningBg: '#332400',
-      dangerBg: '#3B0E0B',
-      infoBg: '#062733',
+      successBg: '#064E3B',
+      warningBg: '#451A03',
+      dangerBg: '#450A0A',
+      infoBg: '#0C4A6E',
     },
   },
 };

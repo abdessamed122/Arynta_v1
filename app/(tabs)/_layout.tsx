@@ -1,16 +1,36 @@
 import { Tabs } from 'expo-router';
 import { Mic, MessageCircle, History } from 'lucide-react-native';
+import { useTheme } from '@/theme/ThemeProvider';
 
 export default function TabLayout() {
+  const { color, isDark } = useTheme();
+  
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarActiveTintColor: color.primary,
+        tabBarInactiveTintColor: color.textAlt,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#E5E5E7',
+          backgroundColor: color.surface,
+          borderTopColor: color.border,
+          borderTopWidth: 1,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: isDark ? 0.3 : 0.1,
+          shadowRadius: 8,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
         },
       }}
     >
