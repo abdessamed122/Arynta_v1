@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -12,19 +11,51 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import Toast from 'react-native-toast-message';
-import { FileText, Upload } from 'lucide-react-native';
+import { FileText, Upload, Sparkles, Mic2, Volume2 } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { 
+  FadeInDown, 
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useRecorder } from '@/hooks/useRecorder';
 import { conversationService } from '@/services/ConversationService';
 import { storageService } from '@/services/StorageService';
 import RecordButton from '@/components/RecordButton';
 import ProgressBar from '@/components/ProgressBar';
+import Header from '@/components/ui/Header';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { useTheme } from '@/theme/ThemeProvider';
 
 export default function RecordScreen() {
   const router = useRouter();
   const recorder = useRecorder();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const { color, spacing, typography, scaleFont, radii, shadows } = useTheme();
+
+  const recordingScale = useSharedValue(1);
+  const recordingOpacity = useSharedValue(1);
+
+  const animatedRecordingStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: recordingScale.value }],
+    opacity: recordingOpacity.value,
+  }));
+
+  React.useEffect(() => {
+    if (recorder.isRecording) {
+      recordingScale.value = withSpring(1.05, { damping: 10 });
+      recordingOpacity.value = withTiming(0.9, { duration: 300 });
+    } else {
+      recordingScale.value = withSpring(1, { damping: 10 });
+      recordingOpacity.value = withTiming(1, { duration: 300 });
+    }
+  }, [recorder.isRecording]);
 
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -170,30 +201,120 @@ export default function RecordScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Language Learning Assistant</Text>
-          <Text style={styles.subtitle}>
-            Record your voice or select an audio file to start a conversation
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }}>
+      <Header 
+        title="Voice Assistant" 
+        subtitle="Language Learning Companion"
+        gradient
+      />
+      
+      <ScrollView 
+        contentContainerStyle={{ 
+          flexGrow: 1, 
+          paddingHorizontal: spacing.lg,
+          paddingBottom: spacing['4xl'],
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero Section */}
+        <Animated.View 
+          entering={FadeInDown.delay(200).duration(600)}
+          style={{ 
+            alignItems: 'center', 
+            marginTop: spacing['3xl'],
+            marginBottom: spacing['4xl'],
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: color.primary + '15',
+              padding: spacing.lg,
+              borderRadius: radii['3xl'],
+              marginBottom: spacing.lg,
+            }}
+          >
+            <Sparkles size={32} color={color.primary} />
+          </View>
+          
+          <Text
+            style={{
+              fontSize: scaleFont(typography.size['3xl']),
+              fontWeight: typography.weight.bold as any,
+              color: color.text,
+              textAlign: 'center',
+              marginBottom: spacing.sm,
+            }}
+          >
+            Start Conversation
           </Text>
-        </View>
+          
+          <Text
+            style={{
+              fontSize: scaleFont(typography.size.lg),
+              color: color.textAlt,
+              textAlign: 'center',
+              lineHeight: scaleFont(typography.size.lg) * 1.4,
+              paddingHorizontal: spacing.xl,
+            }}
+          >
+            Record your voice or upload an audio file to practice with our AI language assistant
+          </Text>
+        </Animated.View>
 
-        <View style={styles.recordSection}>
+        {/* Recording Section */}
+        <Animated.View 
+          entering={FadeInUp.delay(400).duration(600)}
+          style={animatedRecordingStyle}
+        >
           {!recorder.hasPermission ? (
-            <View style={styles.permissionContainer}>
-              <Text style={styles.permissionText}>
-                Microphone access is required to record audio.
-              </Text>
-              <TouchableOpacity
-                style={styles.permissionButton}
-                onPress={recorder.requestPermission}
-              >
-                <Text style={styles.permissionButtonText}>Grant Permission</Text>
-              </TouchableOpacity>
-            </View>
+            <Card style={{ marginBottom: spacing.xl }}>
+              <View style={{ alignItems: 'center', paddingVertical: spacing.lg }}>
+                <View
+                  style={{
+                    backgroundColor: color.warning + '20',
+                    padding: spacing.lg,
+                    borderRadius: radii.round,
+                    marginBottom: spacing.lg,
+                  }}
+                >
+                  <Mic2 size={32} color={color.warning} />
+                </View>
+                
+                <Text
+                  style={{
+                    fontSize: scaleFont(typography.size.lg),
+                    fontWeight: typography.weight.semibold as any,
+                    color: color.text,
+                    textAlign: 'center',
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  Microphone Access Required
+                </Text>
+                
+                <Text
+                  style={{
+                    fontSize: scaleFont(typography.size.md),
+                    color: color.textAlt,
+                    textAlign: 'center',
+                    marginBottom: spacing.xl,
+                    lineHeight: scaleFont(typography.size.md) * 1.4,
+                  }}
+                >
+                  We need access to your microphone to record audio for language learning
+                </Text>
+                
+                <Button 
+                  onPress={recorder.requestPermission}
+                  size="lg"
+                  style={{ minWidth: 200 }}
+                >
+                  Grant Permission
+                </Button>
+              </View>
+            </Card>
           ) : (
-            <>
+            <View style={{ alignItems: 'center', marginBottom: spacing.xl }}>
               <RecordButton
                 isRecording={recorder.isRecording}
                 onPress={handleRecord}
@@ -201,147 +322,194 @@ export default function RecordScreen() {
               />
               
               {recorder.duration > 0 && (
-                <View style={styles.durationContainer}>
-                  <Text style={styles.duration}>
+                <Animated.View
+                  entering={FadeInUp.duration(300)}
+                  style={{
+                    backgroundColor: color.surfaceAlt,
+                    paddingHorizontal: spacing.lg,
+                    paddingVertical: spacing.md,
+                    borderRadius: radii.xl,
+                    marginTop: spacing.lg,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    ...shadows.sm,
+                  }}
+                >
+                  <Volume2 size={20} color={color.primary} style={{ marginRight: spacing.sm }} />
+                  <Text
+                    style={{
+                      fontSize: scaleFont(typography.size.lg),
+                      fontWeight: typography.weight.semibold as any,
+                      color: color.text,
+                    }}
+                  >
                     Duration: {formatDuration(recorder.duration)}
                   </Text>
-                </View>
+                </Animated.View>
               )}
-            </>
+            </View>
           )}
-        </View>
+        </Animated.View>
 
-        <View style={styles.actionSection}>
+        {/* Action Buttons */}
+        <Animated.View 
+          entering={FadeInUp.delay(600).duration(600)}
+          style={{ marginBottom: spacing.xl }}
+        >
           {recorder.uri && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.sendButton]}
+            <Button
               onPress={handleSend}
               disabled={isUploading}
+              loading={isUploading}
+              size="lg"
+              iconLeft={<Upload size={20} color="white" />}
+              style={{ 
+                marginBottom: spacing.md,
+                ...shadows.md,
+              }}
             >
-              <Upload size={20} color="white" />
-              <Text style={styles.actionButtonText}>
-                {isUploading ? 'Uploading...' : 'Send Recording'}
-              </Text>
-            </TouchableOpacity>
+              {isUploading ? 'Uploading...' : 'Send Recording'}
+            </Button>
           )}
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.fileButton]}
+          <Button
+            variant="outline"
             onPress={handleFilePicker}
             disabled={isUploading}
+            size="lg"
+            iconLeft={<FileText size={20} color={color.primary} />}
+            style={{ ...shadows.sm }}
           >
-            <FileText size={20} color="#007AFF" />
-            <Text style={[styles.actionButtonText, { color: '#007AFF' }]}>
-              Select Audio File
-            </Text>
-          </TouchableOpacity>
-        </View>
+            Select Audio File
+          </Button>
+        </Animated.View>
 
+        {/* Upload Progress */}
         {isUploading && (
-          <View style={styles.progressSection}>
-            <ProgressBar
-              progress={uploadProgress}
-              label="Uploading audio..."
-              color="#007AFF"
-            />
-          </View>
+          <Animated.View 
+            entering={FadeInUp.duration(300)}
+            style={{ marginBottom: spacing.xl }}
+          >
+            <Card>
+              <View style={{ alignItems: 'center', paddingVertical: spacing.lg }}>
+                <Text
+                  style={{
+                    fontSize: scaleFont(typography.size.lg),
+                    fontWeight: typography.weight.semibold as any,
+                    color: color.text,
+                    marginBottom: spacing.lg,
+                  }}
+                >
+                  Processing Your Audio
+                </Text>
+                
+                <ProgressBar
+                  progress={uploadProgress}
+                  label="Analyzing speech patterns..."
+                  color={color.primary}
+                />
+                
+                <Text
+                  style={{
+                    fontSize: scaleFont(typography.size.sm),
+                    color: color.textAlt,
+                    textAlign: 'center',
+                    marginTop: spacing.md,
+                  }}
+                >
+                  This may take a few moments
+                </Text>
+              </View>
+            </Card>
+          </Animated.View>
         )}
+
+        {/* Features Section */}
+        <Animated.View 
+          entering={FadeInUp.delay(800).duration(600)}
+          style={{ marginTop: spacing.xl }}
+        >
+          <Text
+            style={{
+              fontSize: scaleFont(typography.size.xl),
+              fontWeight: typography.weight.bold as any,
+              color: color.text,
+              marginBottom: spacing.lg,
+              textAlign: 'center',
+            }}
+          >
+            How it works
+          </Text>
+          
+          {[
+            {
+              icon: <Mic2 size={24} color={color.primary} />,
+              title: 'Record or Upload',
+              description: 'Speak naturally or select an audio file'
+            },
+            {
+              icon: <Sparkles size={24} color={color.accent} />,
+              title: 'AI Analysis',
+              description: 'Our AI analyzes your speech and provides feedback'
+            },
+            {
+              icon: <Volume2 size={24} color={color.success} />,
+              title: 'Interactive Response',
+              description: 'Get audio responses and conversation practice'
+            },
+          ].map((feature, index) => (
+            <Animated.View
+              key={feature.title}
+              entering={FadeInUp.delay(1000 + index * 100).duration(400)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: color.surfaceAlt,
+                padding: spacing.lg,
+                borderRadius: radii.lg,
+                marginBottom: spacing.md,
+                ...shadows.xs,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: color.surface,
+                  padding: spacing.md,
+                  borderRadius: radii.lg,
+                  marginRight: spacing.lg,
+                }}
+              >
+                {feature.icon}
+              </View>
+              
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: scaleFont(typography.size.lg),
+                    fontWeight: typography.weight.semibold as any,
+                    color: color.text,
+                    marginBottom: spacing.xs,
+                  }}
+                >
+                  {feature.title}
+                </Text>
+                
+                <Text
+                  style={{
+                    fontSize: scaleFont(typography.size.md),
+                    color: color.textAlt,
+                    lineHeight: scaleFont(typography.size.md) * 1.4,
+                  }}
+                >
+                  {feature.description}
+                </Text>
+              </View>
+            </Animated.View>
+          ))}
+        </Animated.View>
       </ScrollView>
+      
       <Toast />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  recordSection: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  permissionContainer: {
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#FFF3E0',
-    borderRadius: 12,
-  },
-  permissionText: {
-    fontSize: 16,
-    color: '#FF9500',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  permissionButton: {
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  permissionButtonText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  durationContainer: {
-    marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-  },
-  duration: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  actionSection: {
-    gap: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    gap: 8,
-  },
-  sendButton: {
-    backgroundColor: '#007AFF',
-  },
-  fileButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#007AFF',
-  },
-  actionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
-  },
-  progressSection: {
-    marginTop: 20,
-  },
-});

@@ -2,23 +2,28 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   TouchableOpacity,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Trash2, Play, Clock } from 'lucide-react-native';
+import { Trash2, Play, Clock, MessageSquare, Volume2 } from 'lucide-react-native';
+import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
 
 import { storageService } from '@/services/StorageService';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { StoredConversation } from '@/types/api';
+import { useTheme } from '@/theme/ThemeProvider';
+import Header from '@/components/ui/Header';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 export default function HistoryScreen() {
   const [conversations, setConversations] = useState<StoredConversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioPlayer = useAudioPlayer();
+  const { color, spacing, typography, scaleFont, radii, shadows } = useTheme();
 
   useEffect(() => {
     loadConversations();
@@ -113,64 +118,177 @@ export default function HistoryScreen() {
 
   const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (days === 0) {
+      return 'Today at ' + date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } else if (days === 1) {
+      return 'Yesterday at ' + date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } else if (days < 7) {
+      return `${days} days ago`;
+    } else {
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
   };
 
-  const renderConversation = ({ item }: { item: StoredConversation }) => (
-    <View style={styles.conversationCard}>
-      <View style={styles.conversationHeader}>
-        <View style={styles.timestampContainer}>
-          <Clock size={16} color="#8E8E93" />
-          <Text style={styles.timestamp}>
-            {formatDate(item.timestamp)}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => deleteConversation(item)}
+  const renderConversation = ({ item, index }: { item: StoredConversation; index: number }) => (
+    <Animated.View
+      entering={FadeInDown.delay(index * 100).duration(400)}
+      style={{ marginBottom: spacing.lg }}
+    >
+      <Card style={{ ...shadows.sm }}>
+        {/* Header */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: spacing.md,
+          }}
         >
-          <Trash2 size={18} color="#FF3B30" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.conversationContent}>
-        <View style={styles.messageBlock}>
-          <Text style={styles.messageLabel}>You said:</Text>
-          <Text style={styles.messageText} numberOfLines={2}>
-            {item.transcript}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <View
+              style={{
+                backgroundColor: color.primary + '20',
+                padding: spacing.sm,
+                borderRadius: radii.lg,
+                marginRight: spacing.sm,
+              }}
+            >
+              <Clock size={16} color={color.primary} />
+            </View>
+            <Text
+              style={{
+                fontSize: scaleFont(typography.size.sm),
+                color: color.textAlt,
+                flex: 1,
+              }}
+            >
+              {formatDate(item.timestamp)}
+            </Text>
+          </View>
+          
+          <TouchableOpacity
+            style={{
+              padding: spacing.sm,
+              borderRadius: radii.lg,
+              backgroundColor: color.dangerBg,
+            }}
+            onPress={() => deleteConversation(item)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Trash2 size={18} color={color.danger} />
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.messageBlock}>
-          <Text style={styles.messageLabel}>Assistant replied:</Text>
-          <Text style={styles.messageText} numberOfLines={2}>
-            {item.reply_text}
-          </Text>
-        </View>
-      </View>
+        {/* Content */}
+        <View style={{ marginBottom: spacing.md }}>
+          {/* User message */}
+          <View
+            style={{
+              backgroundColor: color.surfaceAlt,
+              padding: spacing.md,
+              borderRadius: radii.lg,
+              marginBottom: spacing.md,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+              <MessageSquare size={16} color={color.textAlt} />
+              <Text
+                style={{
+                  fontSize: scaleFont(typography.size.sm),
+                  fontWeight: typography.weight.semibold as any,
+                  color: color.textAlt,
+                  marginLeft: spacing.xs,
+                }}
+              >
+                You said:
+              </Text>
+            </View>
+            <Text
+              style={{
+                fontSize: scaleFont(typography.size.md),
+                color: color.text,
+                lineHeight: scaleFont(typography.size.md) * 1.4,
+              }}
+              numberOfLines={3}
+            >
+              {item.transcript}
+            </Text>
+          </View>
 
-      {item.local_audio_path && (
-        <TouchableOpacity
-          style={styles.playButton}
-          onPress={() => playAudio(item)}
-        >
-          <Play size={20} color="#007AFF" />
-          <Text style={styles.playButtonText}>
+          {/* Assistant message */}
+          <View
+            style={{
+              backgroundColor: color.primary + '10',
+              padding: spacing.md,
+              borderRadius: radii.lg,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+              <Volume2 size={16} color={color.primary} />
+              <Text
+                style={{
+                  fontSize: scaleFont(typography.size.sm),
+                  fontWeight: typography.weight.semibold as any,
+                  color: color.primary,
+                  marginLeft: spacing.xs,
+                }}
+              >
+                Assistant replied:
+              </Text>
+            </View>
+            <Text
+              style={{
+                fontSize: scaleFont(typography.size.md),
+                color: color.text,
+                lineHeight: scaleFont(typography.size.md) * 1.4,
+              }}
+              numberOfLines={3}
+            >
+              {item.reply_text}
+            </Text>
+          </View>
+        </View>
+
+        {/* Play button */}
+        {item.local_audio_path && (
+          <Button
+            variant="outline"
+            onPress={() => playAudio(item)}
+            iconLeft={<Play size={20} color={color.primary} />}
+          >
             {playingId === item.id ? 'Stop Audio' : 'Play Audio'}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
+          </Button>
+        )}
+      </Card>
+    </Animated.View>
   );
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centerContent}>
-          <Text style={styles.loadingText}>Loading conversations...</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }}>
+        <Header title="History" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text
+            style={{
+              fontSize: scaleFont(typography.size.lg),
+              color: color.textAlt,
+            }}
+          >
+            Loading conversations...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -178,11 +296,48 @@ export default function HistoryScreen() {
 
   if (conversations.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centerContent}>
-          <Text style={styles.emptyTitle}>No Conversations Yet</Text>
-          <Text style={styles.emptySubtitle}>
-            Start recording to see your conversation history here.
+      <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }}>
+        <Header title="History" />
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: spacing['4xl'],
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: color.surfaceAlt,
+              padding: spacing['4xl'],
+              borderRadius: radii['3xl'],
+              marginBottom: spacing.xl,
+            }}
+          >
+            <MessageSquare size={48} color={color.textAlt} />
+          </View>
+          
+          <Text
+            style={{
+              fontSize: scaleFont(typography.size['2xl']),
+              fontWeight: typography.weight.bold as any,
+              color: color.text,
+              marginBottom: spacing.sm,
+              textAlign: 'center',
+            }}
+          >
+            No Conversations Yet
+          </Text>
+          
+          <Text
+            style={{
+              fontSize: scaleFont(typography.size.lg),
+              color: color.textAlt,
+              textAlign: 'center',
+              lineHeight: scaleFont(typography.size.lg) * 1.4,
+            }}
+          >
+            Start recording to see your conversation history here
           </Text>
         </View>
       </SafeAreaView>
@@ -190,139 +345,30 @@ export default function HistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Conversation History</Text>
-        <TouchableOpacity
-          style={styles.clearButton}
-          onPress={clearAllHistory}
-        >
-          <Text style={styles.clearButtonText}>Clear All</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }}>
+      <Header title="History" subtitle={`${conversations.length} conversation${conversations.length !== 1 ? 's' : ''}`} />
+      
+      <View style={{ flex: 1, paddingHorizontal: spacing.lg }}>
+        {/* Clear all button */}
+        <View style={{ paddingVertical: spacing.lg }}>
+          <Button
+            variant="soft"
+            onPress={clearAllHistory}
+            iconLeft={<Trash2 size={20} color={color.danger} />}
+            style={{ backgroundColor: color.dangerBg }}
+          >
+            <Text style={{ color: color.danger }}>Clear All History</Text>
+          </Button>
+        </View>
 
-      <FlatList
-        data={conversations}
-        keyExtractor={(item) => item.id}
-        renderItem={renderConversation}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+        <FlatList
+          data={conversations}
+          keyExtractor={(item) => item.id}
+          renderItem={renderConversation}
+          contentContainerStyle={{ paddingBottom: spacing['4xl'] }}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E7',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  clearButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#FFE5E5',
-    borderRadius: 6,
-  },
-  clearButtonText: {
-    color: '#FF3B30',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#8E8E93',
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  listContent: {
-    padding: 20,
-  },
-  conversationCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E5E7',
-  },
-  conversationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  timestampContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  timestamp: {
-    fontSize: 14,
-    color: '#8E8E93',
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  conversationContent: {
-    marginBottom: 12,
-  },
-  messageBlock: {
-    marginBottom: 12,
-  },
-  messageLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 4,
-  },
-  messageText: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 22,
-  },
-  playButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 8,
-    gap: 8,
-  },
-  playButtonText: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-});

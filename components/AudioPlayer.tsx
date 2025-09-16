@@ -1,9 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, PanResponder, GestureResponderEvent } from 'react-native';
-import { Play, Pause, Loader as Loader2 } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, Platform, PanResponder, GestureResponderEvent } from 'react-native';
+import { Play, Pause, Loader as Loader2, RotateCcw, Volume2 } from 'lucide-react-native';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import WebAudioPlayer from './WebAudioPlayer';
 import { useTheme } from '@/theme/ThemeProvider';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring,
+  FadeIn,
+  SlideInDown,
+} from 'react-native-reanimated';
 
 interface AudioPlayerProps {
   audioUri?: string;
@@ -13,12 +21,15 @@ interface AudioPlayerProps {
 
 export default function AudioPlayer(props: Readonly<AudioPlayerProps>) {
   const { audioUri, onError, autoPlay } = props;
-  const { color, spacing, radii, scaleFont } = useTheme();
+  const { color, spacing, radii, scaleFont, typography, shadows } = useTheme();
   const player = useAudioPlayer();
   const attemptedAutoPlayRef = React.useRef(false);
   const [effectiveUri, setEffectiveUri] = React.useState<string | undefined>();
   const [seeking, setSeeking] = React.useState(false);
   const [seekPosition, setSeekPosition] = React.useState<number | null>(null);
+
+  const buttonScale = useSharedValue(1);
+  const progressScale = useSharedValue(1);
 
   React.useEffect(() => {
     if (!audioUri) {
@@ -76,6 +87,7 @@ export default function AudioPlayer(props: Readonly<AudioPlayerProps>) {
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
         setSeeking(true);
+        progressScale.value = withSpring(1.1);
         handleSeek(evt);
       },
       onPanResponderMove: (evt) => handleSeek(evt),
@@ -85,6 +97,7 @@ export default function AudioPlayer(props: Readonly<AudioPlayerProps>) {
         }
         setSeeking(false);
         setSeekPosition(null);
+        progressScale.value = withSpring(1);
       },
       onPanResponderTerminationRequest: () => false,
     })
@@ -100,92 +113,222 @@ export default function AudioPlayer(props: Readonly<AudioPlayerProps>) {
     });
   };
 
+  const handlePlayPause = () => {
+    buttonScale.value = withSpring(0.9, { duration: 100 }, () => {
+      buttonScale.value = withSpring(1);
+    });
+    player.togglePlayPause();
+  };
+
+  const animatedButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
+
+  const animatedProgressStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: progressScale.value }],
+  }));
+
   const renderNative = () => {
     if (!effectiveUri) {
       return (
-        <View style={{ backgroundColor: color.surfaceAlt, borderRadius: radii.lg, padding: spacing.md, marginVertical: spacing.sm, alignItems: 'center' }}>
-          <Text style={{ color: color.textAlt, fontSize: scaleFont(14), fontStyle: 'italic' }}>No audio available</Text>
-        </View>
-      );
-    }
-    return (
-      <View style={{ backgroundColor: color.surfaceAlt, borderRadius: radii.lg, padding: spacing.md, marginVertical: spacing.sm }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <TouchableOpacity
-          accessibilityRole="button"
-            accessibilityLabel={player.isPlaying ? 'Pause audio' : 'Play audio'}
-          disabled={!player.isLoaded || player.isBuffering}
-          onPress={player.togglePlayPause}
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: color.primary + '22',
-            justifyContent: 'center',
+        <Animated.View 
+          entering={FadeIn.duration(400)}
+          style={{ 
+            backgroundColor: color.surfaceAlt, 
+            borderRadius: radii.xl, 
+            padding: spacing.lg, 
             alignItems: 'center',
-            marginRight: spacing.md,
-            opacity: !player.isLoaded ? 0.5 : 1,
+            ...shadows.sm,
           }}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
-          {player.isBuffering && <Loader2 size={24} color={color.primary} />}
-          {!player.isBuffering && player.isPlaying && <Pause size={24} color={color.primary} />}
-          {!player.isBuffering && !player.isPlaying && <Play size={24} color={color.primary} />}
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
           <View
-            ref={progressBarRef}
-            {...panResponder.panHandlers}
             style={{
-              height: 10,
-              backgroundColor: color.border,
-              borderRadius: 5,
-              justifyContent: 'center',
-              marginBottom: spacing.xs,
+              backgroundColor: color.border + '40',
+              padding: spacing.lg,
+              borderRadius: radii.round,
+              marginBottom: spacing.md,
             }}
           >
-            <View
-              style={{
-                height: 10,
-                width: `${progressPct}%`,
-                backgroundColor: color.primary,
-                borderRadius: 5,
-              }}
-            />
-            {seeking && (
-              <View
+            <Volume2 size={24} color={color.textAlt} />
+          </View>
+          <Text 
+            style={{ 
+              color: color.textAlt, 
+              fontSize: scaleFont(typography.size.md),
+              fontStyle: 'italic',
+              textAlign: 'center',
+            }}
+          >
+            No audio available
+          </Text>
+        </Animated.View>
+      );
+    }
+
+    return (
+      <Animated.View 
+        entering={SlideInDown.duration(600)}
+        style={{
+          backgroundColor: color.surface,
+          borderRadius: radii.xl,
+          overflow: 'hidden',
+          ...shadows.md,
+        }}
+      >
+        <LinearGradient
+          colors={[color.surface, color.surfaceAlt]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            padding: spacing.lg,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {/* Play/Pause Button */}
+            <Animated.View style={animatedButtonStyle}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={player.isPlaying ? 'Pause audio' : 'Play audio'}
+                disabled={!player.isLoaded || player.isBuffering}
+                onPress={handlePlayPause}
                 style={{
-                  position: 'absolute',
-                  left: `${progressPct}%`,
-                  top: 5,
-                  transform: [{ translateX: -8 }, { translateY: -8 }],
-                  width: 16,
-                  height: 16,
-                  borderRadius: 8,
-                  backgroundColor: color.primary,
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: spacing.lg,
+                  opacity: !player.isLoaded ? 0.5 : 1,
+                  ...shadows.md,
                 }}
-              />
-            )}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <LinearGradient
+                  colors={[color.primary, color.primaryHover]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {player.isBuffering && (
+                    <Animated.View
+                      style={{
+                        transform: [{ rotate: '0deg' }],
+                      }}
+                    >
+                      <Loader2 size={28} color="white" />
+                    </Animated.View>
+                  )}
+                  {!player.isBuffering && player.isPlaying && <Pause size={28} color="white" />}
+                  {!player.isBuffering && !player.isPlaying && <Play size={28} color="white" />}
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+
+            {/* Progress Section */}
+            <View style={{ flex: 1 }}>
+              {/* Progress Bar */}
+              <Animated.View
+                ref={progressBarRef}
+                {...panResponder.panHandlers}
+                style={[
+                  {
+                    height: 8,
+                    backgroundColor: color.border,
+                    borderRadius: 4,
+                    justifyContent: 'center',
+                    marginBottom: spacing.sm,
+                    overflow: 'hidden',
+                  },
+                  animatedProgressStyle,
+                ]}
+              >
+                <View
+                  style={{
+                    height: '100%',
+                    width: `${progressPct}%`,
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <LinearGradient
+                    colors={[color.primary, color.accent]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{
+                      height: '100%',
+                      width: '100%',
+                    }}
+                  />
+                </View>
+                
+                {/* Progress thumb when seeking */}
+                {seeking && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: `${progressPct}%`,
+                      top: 4,
+                      transform: [{ translateX: -8 }, { translateY: -8 }],
+                      width: 16,
+                      height: 16,
+                      borderRadius: 8,
+                      backgroundColor: color.primary,
+                      ...shadows.md,
+                    }}
+                  />
+                )}
+              </Animated.View>
+
+              {/* Time Display */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text 
+                  style={{ 
+                    fontSize: scaleFont(typography.size.sm), 
+                    color: color.text,
+                    fontWeight: typography.weight.medium as any,
+                  }}
+                >
+                  {formatTime(activePosition)}
+                </Text>
+                <Text 
+                  style={{ 
+                    fontSize: scaleFont(typography.size.sm), 
+                    color: color.textAlt,
+                    fontWeight: typography.weight.medium as any,
+                  }}
+                >
+                  {formatTime(player.duration)}
+                </Text>
+              </View>
+            </View>
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: scaleFont(12), color: color.textAlt }}>{formatTime(activePosition)}</Text>
-            <Text style={{ fontSize: scaleFont(12), color: color.textAlt }}>{formatTime(player.duration)}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
+        </LinearGradient>
+      </Animated.View>
     );
   };
 
   if (Platform.OS === 'web') {
     return (
-      <View style={{ backgroundColor: color.surfaceAlt, borderRadius: radii.lg, padding: spacing.md, marginVertical: spacing.sm }}>
-        <WebAudioPlayer src={audioUri} autoPlay={autoPlay} onError={(e) => onError?.(e)} />
+      <View style={{ 
+        backgroundColor: color.surface, 
+        borderRadius: radii.xl, 
+        overflow: 'hidden',
+        ...shadows.md,
+      }}>
+        <WebAudioPlayer 
+          src={audioUri} 
+          autoPlay={autoPlay} 
+          onError={(e) => onError?.(e)} 
+        />
       </View>
     );
   }
 
   return renderNative();
 }
-
-const styles = StyleSheet.create({});
