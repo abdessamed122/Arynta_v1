@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
+import { Volume2, MessageCircle, Sparkles } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reanimated';
 
 import { conversationService } from '@/services/ConversationService';
 import { storageService } from '@/services/StorageService';
@@ -11,13 +13,12 @@ import { PollingStatus } from '@/types/api';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ChatBubble } from '@/components/ui/ChatBubble';
-import Animated, { LinearTransition } from 'react-native-reanimated';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import Surface from '@/components/ui/Surface';
+import Header from '@/components/ui/Header';
 
 export default function ConversationScreen() {
-  const { color, spacing, typography, scaleFont } = useTheme();
+  const { color, spacing, typography, scaleFont, radii, shadows } = useTheme();
   const params = useLocalSearchParams();
   const [pollingStatus, setPollingStatus] = useState<PollingStatus>({
     status: 'idle',
@@ -164,20 +165,43 @@ export default function ConversationScreen() {
   const getStatusMessage = () => {
     switch (pollingStatus.status) {
       case 'polling':
-        return 'Checking if audio is ready...';
+        return 'Processing your audio...';
       case 'ready':
         return 'Audio is ready to play!';
       case 'error':
-        return 'Failed to download audio';
+        return 'Failed to process audio';
       case 'timeout':
         return 'Audio processing timed out';
       default:
-        return 'Preparing audio...';
+        return 'Preparing audio response...';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (pollingStatus.status) {
+      case 'polling':
+        return <Sparkles size={24} color={color.accent} />;
+      case 'ready':
+        return <Volume2 size={24} color={color.success} />;
+      case 'error':
+      case 'timeout':
+        return <MessageCircle size={24} color={color.danger} />;
+      default:
+        return <Sparkles size={24} color={color.textAlt} />;
     }
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }}>
+      <Header 
+        title="Conversation" 
+        subtitle="AI Language Assistant"
+        showBack
+        onBackPress={() => {
+          // You can implement navigation back logic here
+        }}
+      />
+      
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -185,101 +209,197 @@ export default function ConversationScreen() {
           paddingTop: spacing.lg,
           paddingBottom: spacing['3xl'],
         }}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={{ alignItems: 'center', marginBottom: spacing.xl }}>
-          <Text
+        {/* Chat Section */}
+        <Animated.View 
+          entering={FadeInDown.delay(200).duration(600)}
+          style={{ marginBottom: spacing.xl }}
+        >
+          <View
             style={{
-              fontSize: scaleFont(24),
-              fontWeight: typography.weight.bold as any,
-              color: color.text,
+              backgroundColor: color.surfaceAlt,
+              borderRadius: radii.xl,
+              padding: spacing.lg,
+              ...shadows.sm,
             }}
           >
-            Conversation
-          </Text>
-        </View>
-
-        <View style={{ marginBottom: spacing.xl }}>
-          <Text
-            style={{
-              fontSize: scaleFont(14),
-              fontWeight: typography.weight.semibold as any,
-              color: color.textAlt,
-              marginBottom: spacing.sm,
-              textTransform: 'uppercase',
-            }}
-          >
-            Dialogue
-          </Text>
-          <Card>
-            <Animated.View layout={LinearTransition.duration(180)}>
-              <ChatBubble role="user" text={transcript || 'No transcript available'} />
-              <ChatBubble role="assistant" text={replyText || 'No reply available'} />
-            </Animated.View>
-          </Card>
-        </View>
-
-        <View style={{ marginBottom: spacing.xl }}>
-          <Card title="Audio Response" subtitle={getStatusMessage()}>
-            {pollingStatus.status === 'polling' && (
-              <ProgressBar
-                progress={pollingStatus.progress}
-                label="Preparing audio..."
-                color={color.primary}
-              />
-            )}
-            {(pollingStatus.status === 'error' || pollingStatus.status === 'timeout') && (
-              <Button variant="outline" onPress={retryPolling}>
-                Retry
-              </Button>
-            )}
-            <View style={{ marginTop: spacing.md }}>
-              <AudioPlayer
-                key={audioVersion}
-                audioUri={pollingStatus.localPath}
-                autoPlay={pollingStatus.status === 'ready'}
-                onError={(error) => {
-                  console.error('Audio player error:', error);
-                  setPollingStatus({ status: 'error', progress: 0 });
-                }}
-              />
-            </View>
-          </Card>
-        </View>
-
-        <Surface level={0} padding="md" rounded style={{ backgroundColor: color.surfaceAlt, marginBottom: spacing.xl }}>
-          <Text
-            style={{
-              fontSize: scaleFont(16),
-              fontWeight: typography.weight.semibold as any,
-              color: color.text,
-              marginBottom: spacing.xs,
-            }}
-          >
-            How it works
-          </Text>
-          {[
-            'Your audio is processed by our AI language assistant',
-            'We check for the audio response every 2 seconds',
-            'Processing typically takes 10-30 seconds',
-            'If it exceeds 60 seconds you can retry',
-          ].map(line => (
-            <Text
-              key={line}
+            <View
               style={{
-                fontSize: scaleFont(14),
-                color: color.textAlt,
-                lineHeight: 20,
-                marginBottom: 4,
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: spacing.lg,
               }}
             >
-              • {line}
-            </Text>
+              <View
+                style={{
+                  backgroundColor: color.primary + '20',
+                  padding: spacing.sm,
+                  borderRadius: radii.lg,
+                  marginRight: spacing.sm,
+                }}
+              >
+                <MessageCircle size={20} color={color.primary} />
+              </View>
+              <Text
+                style={{
+                  fontSize: scaleFont(typography.size.lg),
+                  fontWeight: typography.weight.semibold as any,
+                  color: color.text,
+                }}
+              >
+                Conversation
+              </Text>
+            </View>
+            
+            <ChatBubble 
+              role="user" 
+              text={transcript || 'No transcript available'} 
+              showAvatar={false}
+            />
+            <ChatBubble 
+              role="assistant" 
+              text={replyText || 'No reply available'} 
+              showAvatar={false}
+            />
+          </View>
+        </Animated.View>
+
+        {/* Audio Player Section */}
+        <Animated.View 
+          entering={FadeInUp.delay(400).duration(600)}
+          style={{ marginBottom: spacing.xl }}
+        >
+          <Card
+            style={{
+              ...shadows.md,
+              backgroundColor: color.surface,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: spacing.lg,
+              }}
+            >
+              {getStatusIcon()}
+              <View style={{ marginLeft: spacing.sm, flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: scaleFont(typography.size.lg),
+                    fontWeight: typography.weight.semibold as any,
+                    color: color.text,
+                  }}
+                >
+                  Audio Response
+                </Text>
+                <Text
+                  style={{
+                    fontSize: scaleFont(typography.size.sm),
+                    color: color.textAlt,
+                    marginTop: spacing.xs,
+                  }}
+                >
+                  {getStatusMessage()}
+                </Text>
+              </View>
+            </View>
+
+            {pollingStatus.status === 'polling' && (
+              <View style={{ marginBottom: spacing.lg }}>
+                <ProgressBar
+                  progress={pollingStatus.progress}
+                  label="Processing audio..."
+                  color={color.accent}
+                  height={6}
+                />
+              </View>
+            )}
+
+            {(pollingStatus.status === 'error' || pollingStatus.status === 'timeout') && (
+              <View style={{ marginBottom: spacing.lg }}>
+                <Button 
+                  variant="outline" 
+                  onPress={retryPolling}
+                  style={{ ...shadows.sm }}
+                >
+                  Retry Processing
+                </Button>
+              </View>
+            )}
+
+            <AudioPlayer
+              key={audioVersion}
+              audioUri={pollingStatus.localPath}
+              autoPlay={pollingStatus.status === 'ready'}
+              onError={(error) => {
+                console.error('Audio player error:', error);
+                setPollingStatus({ status: 'error', progress: 0 });
+              }}
+            />
+          </Card>
+        </Animated.View>
+
+        {/* How it works section */}
+        <Animated.View 
+          entering={SlideInRight.delay(600).duration(500)}
+          style={{
+            backgroundColor: color.infoBg,
+            borderRadius: radii.xl,
+            padding: spacing.lg,
+            marginBottom: spacing.xl,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: scaleFont(typography.size.lg),
+              fontWeight: typography.weight.semibold as any,
+              color: color.info,
+              marginBottom: spacing.md,
+            }}
+          >
+            💡 How it works
+          </Text>
+          {[
+            'Your audio is analyzed by our AI language assistant',
+            'We process the speech and generate a thoughtful response',
+            'Processing typically takes 10-30 seconds',
+            'You can retry if processing takes longer than expected',
+          ].map((line, index) => (
+            <Animated.View
+              key={line}
+              entering={FadeInUp.delay(800 + index * 100).duration(300)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                marginBottom: spacing.sm,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: scaleFont(typography.size.md),
+                  color: color.info,
+                  fontWeight: typography.weight.semibold as any,
+                  marginRight: spacing.sm,
+                }}
+              >
+                {index + 1}.
+              </Text>
+              <Text
+                style={{
+                  fontSize: scaleFont(typography.size.md),
+                  color: color.text,
+                  lineHeight: scaleFont(typography.size.md) * 1.4,
+                  flex: 1,
+                }}
+              >
+                {line}
+              </Text>
+            </Animated.View>
           ))}
-        </Surface>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-// Legacy StyleSheet removed: migrated to theme-driven inline styles.
-const styles = StyleSheet.create({});
